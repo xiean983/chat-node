@@ -45,12 +45,16 @@ exports.insertMessage = (userId, friendId, message, types, res) => {
     let messageDb = Message(data);
     messageDb.save((err, data) => {
         if (err) {
-            res.send({
-                status: 500,
-                msg: '服务器异常'
-            })
+            if (res) {
+                res.send({
+                    status: 500,
+                    msg: '服务器异常'
+                })
+            }
         } else {
-            res.send({status: 200});
+            if (res) {
+                res.send({status: 200});
+            }
         }
     })
 }
@@ -142,6 +146,8 @@ exports.searchMessage = ({userId, friendId}, res) => {
     let list = Message.find({});
     // 查询条件
     list.where({$or: [{userId, friendId}, {userId: friendId, friendId: userId}]});
+    // 倒叙
+    list.sort({time: -1});
     // 查找userId关联的user对象
     list.populate('userId');
     list.exec().then((e) => {
@@ -149,9 +155,11 @@ exports.searchMessage = ({userId, friendId}, res) => {
             return {
                 friendId: v.friendId,
                 message: v.message,
-                time:  v.time,
+                time: v.time,
                 imgurl: v.userId.imgurl,
                 userId: v.userId._id,
+                types: v.types,
+                id: v._id,
             }
         })
         if (result.length > 0) {

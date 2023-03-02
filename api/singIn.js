@@ -20,8 +20,6 @@ exports.userLogin = ((name, psw, res) => {
             if (result.length > 0) {
                 result.map(e => {
                     const pswverify = bcrypt.decryption(psw, e.psw);
-                    console.log('name', name, e.name)
-                    console.log('pswverify', pswverify)
                     if (pswverify) {
                         let result = {
                             id: e._id,

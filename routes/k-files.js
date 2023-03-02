@@ -62,6 +62,7 @@ const upload = multer({ storage: storage })
  * */
 router.post('/upload', upload.array('file', 10), function (req, res, next) {
     let path = req.files[0].path;
+    console.log('path', path);
     let imgurl = path.replace(/\\/g,'/');
     console.log('imgurl', imgurl)
     res.send(imgurl);

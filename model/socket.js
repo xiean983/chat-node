@@ -1,17 +1,19 @@
+var dbserver = require('../api/friend');
 module.exports = function(io){
-    // 注册socket用户集合
-    console.log('连接1111111111')
     let user = {};
     io.on('connection',function(socket){
         socket.on('join',(id) => {
-            console.log('加入111');
-            console.log('用户id', id);
-            // io.emit('msg', id);
             user[id] = socket.id;
+            console.log('user集合',user)
         })
-        socket.on('sendinfor', (msg) => {
-            console.log('message: ' + msg);
-            io.emit('some event', msg)
+        socket.on('msg', (msg, fromId, toId) => {
+            //修改好友最后通讯时间
+            dbserver.updateFriendLastTime(fromId, toId);
+            //存储好友消息
+            dbserver.insertMessage(fromId, toId, msg.message, msg.types)
+            if(user[toId]){
+                socket.to(user[toId]).emit('msg', msg, fromId)
+            }
         });
     })
 

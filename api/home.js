@@ -103,7 +103,7 @@ exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
             } else {
                 res.send({
                     status: 200,
-                    result
+                    result: result[0]
                 })
             }
         }

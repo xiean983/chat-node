@@ -16,6 +16,8 @@ var server = app.listen(8082)
 var io = require('socket.io').listen(server);
 //引入socket.js
 require('./model/socket.js')(io);
+//live.js
+require('./model/live.js')(app);
 
 // 路由配置
 // 首页

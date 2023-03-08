@@ -7,7 +7,7 @@ exports.encryption = (e)=>{
     var hash = bcrypt.hashSync(e, salt);
     return hash;
 }
-// 解密
+// 解密对比
 exports.decryption = (e, hash)=>{
     let verif = bcrypt.compareSync(e, hash);
     return verif;

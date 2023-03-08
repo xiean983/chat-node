@@ -77,3 +77,22 @@ exports.userUpdate = ((data, res) => {
         updateInfo(data.id, updatesql, res);
     }
 })
+
+// 密码验证
+exports.checkpsw = (id, psw, res) =>{
+    User.findById({'_id': id}, (err, result) => {
+        if (err) {
+            res.send({
+                status: 500,
+                msg: '服务器异常'
+            })
+        } else {
+            const pswverify = bcrypt.decryption(psw, result.psw);
+            res.send({
+                status: 200,
+                msg: '成功',
+                result: pswverify
+            })
+        }
+    })
+}

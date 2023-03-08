@@ -13,3 +13,10 @@ exports.update = (req, res) => {
     // console.log('data', data);
     dbserver.userUpdate(data, res);
 }
+// 密码校验
+exports.checkpsw = (req, res) => {
+    let data = req.body;
+    let id = data.id;
+    let psw = data.psw;
+    dbserver.checkpsw(id, psw, res);
+}

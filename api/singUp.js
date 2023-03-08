@@ -42,17 +42,18 @@ exports.counUserValue = ((data, type, res) => {
     let wheresql = {};
     // wheresql = { 'type': data }
     wheresql[type] = data;
-    User.countDocuments((err, result) => {
+    User.countDocuments(wheresql, (err, result) => {
         if (err) {
             res.send({
                 status: 500,
                 msg: '服务器异常'
             })
         } else {
+            console.log('result', result)
             res.send({
                 status: 200,
                 msg: '成功',
-                result,
+                result
             })
         }
     })

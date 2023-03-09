@@ -12,6 +12,11 @@ exports.applyFriend = (req, res) => {
     dbserver.applyFriend(data, res);
 }
 
+// 获取所有好友申请消息
+exports.getFriendApply = (req, res) => {
+    let userId = req.body.userId;
+    dbserver.getFriendApply(userId, res);
+}
 // 同意好友申请
 exports.agree = (req, res) => {
     let data = req.body;

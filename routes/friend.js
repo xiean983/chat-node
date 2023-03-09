@@ -89,6 +89,40 @@ router.post('/applyFriend', function(req, res, next){
     friend.applyFriend(req, res);
 })
 
+/**,
+ * @swagger
+ * /friend/getFriendApply:
+ *    post:
+ *      tags:
+ *      - 好友
+ *      summary: 获取所有好友申请消息
+ *      produces:
+ *      - application/json
+ *      requestBody:
+ *          required: true  #是否必传
+ *          content:
+ *              application/json:
+ *                  schema:     #参数备注
+ *                      type: object    #参数类型
+ *                      properties:
+ *                          userId:
+ *                                  type: string    #参数类型
+ *                                  description: 用户名ID    #参数描述
+ *                  example:        #请求参数样例。
+ *                      userId: "string"
+ *      responses:
+ *        200:
+ *          description: successful operation
+ *          schema:
+ *            ref: #/definitions/Order
+ *        400:
+ *          description: Invalid ID supplied
+ *        404:
+ *          description: Order not found
+ * */
+router.post('/getFriendApply', function(req, res, next){
+    friend.getFriendApply(req, res);
+})
 
 /**,
  * @swagger
@@ -193,9 +227,13 @@ router.post('/delete', function(req, res, next){
  *                          friendId:
  *                                  type: string    #参数类型
  *                                  description: 好友ID     #参数描述
+ *                          state:
+ *                                  type: number    #参数类型
+ *                                  description: 好友状态   0好友1申请中2拒绝     #参数描述
  *                  example:        #请求参数样例。
  *                      userId: "string"
  *                      friendId: "string"
+ *                      state: number
  *      responses:
  *        200:
  *          description: successful operation

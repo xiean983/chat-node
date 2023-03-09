@@ -24,7 +24,7 @@ exports.buildFriend = (userId, friendId, state) => {
 // 好友最后通讯时间
 exports.updateFriendLastTime = (userId, friendId) => {
     let wherestr = {$or: [{userId, friendId}, {userId: friendId, friendId: userId}]};
-    let updatestr = {lastTime: new Date()};
+    let updatestr = {lastTime: new Date(), state: 1};
     Friend.updateMany(wherestr, updatestr, (err) => {
         if (err) {
             console.log('获取好友最后通讯时间异常')
@@ -33,14 +33,15 @@ exports.updateFriendLastTime = (userId, friendId) => {
 }
 
 // 添加一对一消息  好友申请消息
-exports.insertMessage = (userId, friendId, message, types, res) => {
+exports.insertMessage = (userId, friendId, message, types, state, res) => {
     let data = {
         userId,
         friendId,
         message,
         types,
         time: new Date(),
-        state: 1 // 好友状态（0已读，1未读
+        state,// 好友状态（0已为好友，1申请中，2，对方拒绝好友）
+        read: 1 // 好友状态（0已读，1未读
     }
     let messageDb = Message(data);
     messageDb.save((err, data) => {
@@ -53,12 +54,23 @@ exports.insertMessage = (userId, friendId, message, types, res) => {
             }
         } else {
             if (res) {
-                res.send({status: 200});
+                res.send({status: 200, result: true});
             }
         }
     })
 }
-
+// 清除旧消息
+exports.removeMsg = (userId, friendId, res) => {
+    let wherestr = {$or: [{userId, friendId}, {userId: friendId, friendId: userId}]};
+    Message.deleteMany(wherestr, function (err) {
+        if (err) {
+            res.send({
+                status: 500,
+                msg: '服务器异常'
+            })
+        }
+    })
+}
 // 申请好友
 exports.applyFriend = ({userId, friendId, message}, res) => {
     let wherestr = {userId, friendId};
@@ -78,15 +90,13 @@ exports.applyFriend = ({userId, friendId, message}, res) => {
                 // 非初次申请添加该好友
                 this.updateFriendLastTime(userId, friendId);
             }
-            this.insertMessage(userId, friendId, message, 1, res)
+            this.insertMessage(userId, friendId, message, 1, 1, res)
         }
     })
 }
-
-// 同意好友申请
-exports.agree = ({userId, friendId}, res) => {
-    let wherestr = {$or: [{userId, friendId}, {userId: friendId, friendId: userId}]};
-    Friend.updateMany(wherestr, {'state': 0}, function (err) {
+//获取所有好友申请消息
+exports.getFriendApply = (userId, res) => {
+    Message.find({friendId: userId, state: 0}, function (err, result) {
         if (err) {
             res.send({
                 status: 500,
@@ -95,8 +105,23 @@ exports.agree = ({userId, friendId}, res) => {
         } else {
             res.send({
                 status: 200,
-                msg: '操作成功'
+                msg: '成功',
+                result
             })
+        }
+    })
+}
+// 同意好友申请
+exports.agree = ({userId, friendId}, res) => {
+    let wherestr = {$or: [{userId, friendId}, {userId: friendId, friendId: userId}]};
+    Friend.updateMany(wherestr, {'state': 0}, (err) => {
+        if (err) {
+            res.send({
+                status: 500,
+                msg: '服务器异常'
+            })
+        } else {
+            this.insertMessage(friendId, userId, '我通过了你的朋友验证请求，现在我们可以开始聊天', 0, 0, res)
         }
     })
 }
@@ -105,17 +130,15 @@ exports.agree = ({userId, friendId}, res) => {
 // 拒绝或删除好友
 exports.delete = ({userId, friendId}, res) => {
     let wherestr = {$or: [{userId, friendId}, {userId: friendId, friendId: userId}]};
-    Friend.deleteMany(wherestr, (err, result) => {
+    Friend.updateMany(wherestr, {state: 2}, (err, result) => {
         if (err) {
             res.send({
                 status: 500,
                 msg: '服务器异常'
             })
         } else {
-            res.send({
-                status: 200,
-                msg: '删除成功'
-            })
+            this.removeMsg(friendId, userId, res)
+            this.insertMessage(friendId, userId, '该用户拒绝了您的好友请求', 0, 2, res)
         }
     })
 }
@@ -141,11 +164,17 @@ exports.friendMarkName = ((data, res) => {
 })
 
 // 获取与好友之间的消息
-exports.searchMessage = ({userId, friendId}, res) => {
+exports.searchMessage = ({userId, friendId, state}, res) => {
     // 拿到所有好友
     let list = Message.find({});
     // 查询条件
-    list.where({$or: [{userId, friendId}, {userId: friendId, friendId: userId}]});
+    let wherestr;
+    if (state) {
+        wherestr = {$or: [{userId},{ friendId: userId}]}
+    } else {
+        wherestr = {$or: [{userId, friendId}, {userId: friendId, friendId: userId}]}
+    }
+    list.where(wherestr);
     // 倒叙
     list.sort({time: -1});
     // 查找userId关联的user对象
@@ -160,17 +189,15 @@ exports.searchMessage = ({userId, friendId}, res) => {
                 userId: v.userId._id,
                 types: v.types,
                 id: v._id,
+                name: v.userId.name,
+                state: v.state,
             }
         })
-        if (result.length > 0) {
-            // console.log('result', result);
-            res.send({status: 200, result});
-        } else {
-            res.send({
-                status: 500,
-                msg: '暂无好友聊天记录'
-            })
-        }
+        res.send({
+            status: 200,
+            msg: '成功',
+            result: result
+        })
     }).catch(err => {
         res.send({
             status: 500,

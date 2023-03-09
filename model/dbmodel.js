@@ -7,7 +7,7 @@ var UserSchema = new Schema({
     name: { type: String },                         // 用户名
     psw: { type: String },                          // 密码
     email: { type: String },                        // 邮箱
-    sex: { type: String, default: '0' },      // 性别
+    sex: { type: String, default: '0' },            // 性别
     birth: { type: Date },                          // 生日
     phone: { type: Number },                        // 电话
     explain: { type: String, default: '这个人很懒，什么也没留下' },                      // 介绍
@@ -33,7 +33,8 @@ var MessageSchema = new Schema({
     message: { type: String },                      // 发送内容
     types: { type: String },                        // 好友状态（0文字，1图片，2，音频链接）
     time: { type: Date },                           // 发送时间
-    state: { type: Number },                        // 好友状态（0已读，1未读
+    state: { type: Number },                        // 好友状态（0已为好友，1申请中，2，对方拒绝好友）
+    read: { type: Number },                         // 好友状态（0已读，1未读)
 });
 
 // 群表

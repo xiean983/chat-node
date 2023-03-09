@@ -11,7 +11,7 @@ var GroupMsg = dbmodel.model('GroupMsg');
 var async = require('async');
 // 引入events
 var events = require('events');
-
+// 好友列表
 exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
     // 好友消息列表
     let friendList = null;
@@ -23,7 +23,8 @@ exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
                 // 拿到所有好友
                 let list = Friend.find({});
                 // 查询条件
-                list.where({userId, state: 0});
+                // list.where({userId, state: 0});
+                list.where({$or: [{userId, state: 1}, {userId, state: 0}]});
                 // 查找friendId关联的user对象
                 list.populate('friendId');
                 // 按时间倒叙排序
@@ -38,14 +39,15 @@ exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
                             userId,
                             friendId: v.friendId._id,
                             markName: v.markName,
-                            lastTime: v.lastTime
+                            lastTime: v.lastTime,
+                            state: v.state,
                         }
                     })
                     if (result.length > 0) {
                         friendList = result;
                         cb(null, friendList);
                     } else {
-                        cb(null, '暂无好友聊天记录');
+                        cb(null);
                     }
                 }).catch(err => {
                     throw err;
@@ -54,43 +56,57 @@ exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
             },
             // 获取每个好友最后一条信息
             function (cb) {
-                var promise = friendList.map(v => {
-                    let wherestr = {$or: [{userId, friendId: v.friendId}, {userId: v.friendId, friendId: userId}]};
-                    return Message.find({wherestr}).sort({time: -1}).findOne({});
-                })
-                Promise.all(promise).then(list => {
-                    list.forEach((e, i) => {
-                        friendList[i] = {
-                            ...friendList[i],
-                            types: e.types,
-                            message: e.message,
-                            time: e.time
-                        }
+                if (friendList && friendList.length > 0) {
+                    var promise = friendList.map(v => {
+                        // 拿到好友消息
+                        let list = Message.findOne({});
+                        // 查询条件
+                        list.where({$or: [{userId, friendId: v.friendId}, {userId: v.friendId, friendId: userId}]});
+                        // 按时间倒叙排序
+                        list.sort({time: -1});
+                        // 查询结果
+                        return list.exec();
+                    })
+                    Promise.all(promise).then(list => {
+                        list.forEach((e, i) => {
+                            friendList[i] = {
+                                ...friendList[i],
+                                types: e.types,
+                                message: e.message,
+                                time: e.time
+                            }
+                        });
+                        cb();
+                    }).catch(err => {
+                        // cb(err, null)
+                        throw err;
                     });
-                    cb();
-                }).catch(err => {
-                    // cb(err, null)
-                    throw err;
-                });
+                } else {
+                    cb(null);
+                }
             },
             // 获取每个好友未读消息数
             function (cb) {
-                var promise = friendList.map(v => {
-                    let wherestr = {userId: v.friendId, friendId: userId, state: 1};
-                    return Message.countDocuments(wherestr);
-                })
-                Promise.all(promise).then(list => {
-                    list.forEach((unread, i) => {
-                        friendList[i] = {
-                            ...friendList[i],
-                            unread
-                        }
+                if (friendList) {
+                    var promise = friendList.map(v => {
+                        let wherestr = {userId: v.friendId, friendId: userId, read: 1};
+                        return Message.countDocuments(wherestr);
                     })
-                    cb();
-                }).catch(err => {
-                    // cb(err, null)
-                    throw err;
-                });
+                    Promise.all(promise).then(list => {
+                        list.forEach((unread, i) => {
+                            friendList[i] = {
+                                ...friendList[i],
+                                unread
+                            }
+                        })
+                        cb();
+                    }).catch(err => {
+                        // cb(err, null)
+                        throw err;
+                    });
+                } else {
+                    cb()
+                }
             }
         ],
 
@@ -101,9 +117,25 @@ exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
                     msg: err
                 })
             } else {
+                let apply = {}, friend = [];
+                if (result[0]) {
+                    let allApply = result[0].filter(v => v.state);
+                    if (allApply.length>0) {
+                        apply = allApply.reduce((pre, cur, arr) => {
+                            return {
+                                time: pre.time,
+                                unread: pre.unread += cur.unread
+                            }
+                        });
+                    }
+                    friend = result[0].filter(v => !v.state);
+                }
                 res.send({
                     status: 200,
-                    result: result[0]
+                    result: {
+                        apply,
+                        friend
+                    }
                 })
             }
         }
@@ -193,9 +225,16 @@ exports.homePageListInfo = ({userId, friendId, groupId}, res, callback) => {
 // })
 
 // 未读消息数已读
-exports.msgread = (({userId, friendId}, res) => {
-    let where = {userId: friendId, friendId: userId, state: 1};
-    Message.updateMany(where, {state: 0}, (err, result) => {
+exports.msgread = (({userId, friendId, state}, res) => {
+    let where;
+    if (state) {
+        // 标记所有好友申请消息已读
+        where = {friendId: userId, read: 1};
+    } else {
+        // 标记好友之间消息已读
+        where = {userId: friendId, friendId: userId, read: 1};
+    }
+    Message.updateMany(where, {read: 0}, (err, result) => {
         if (err) {
             res.send({
                 status: 500,

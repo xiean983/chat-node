@@ -61,7 +61,7 @@ router.post('/email', function(req,res,next){
  *                          name:
  *                                  type: string    #参数类型
  *                                  description: 用户名     #参数描述
- *                          mail:
+ *                          email:
  *                                  type: string    #参数类型
  *                                  description: 邮箱     #参数描述
  *                          psw:
@@ -69,7 +69,7 @@ router.post('/email', function(req,res,next){
  *                                  description: 密码     #参数描述
  *                  example:        #请求参数样例。
  *                      name: "string"
- *                      mail: "string"
+ *                      email: "string"
  *                      psw: "string"
  *      responses:
  *        200:

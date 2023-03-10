@@ -90,7 +90,7 @@ exports.applyFriend = ({userId, friendId, message}, res) => {
                 // 非初次申请添加该好友
                 this.updateFriendLastTime(userId, friendId);
             }
-            this.insertMessage(userId, friendId, message, 1, 1, res)
+            this.insertMessage(userId, friendId, message, 0, 1, res)
         }
     })
 }

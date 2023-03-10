@@ -7,6 +7,7 @@ var Friend = dbmodel.model('Friend');
 var Group = dbmodel.model('Group');
 // GroupUser表
 var GroupUser = dbmodel.model('GroupUser');
+var async = require('async');
 
 // 搜索用户
 exports.searchUser = ((name, res) => {
@@ -28,7 +29,7 @@ exports.searchUser = ((name, res) => {
         } else {
             res.send({
                 status: 200,
-                result
+                result: result
             })
         }
     })

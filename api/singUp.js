@@ -5,15 +5,15 @@ var User = dbmodel.model('User');
 /**
  * 用户注册
  * @param name
- * @param mail
+ * @param email
  * @param psw
  * @param res
  */
-exports.buildUser = (name, mail, psw, res) => {
+exports.buildUser = (name, email, psw, res) => {
     // 密码加密
     let data = {
         name,
-        mail,
+        email,
         psw: bcrypt.encryption(psw),
         time: new Date()
     }
